@@ -1,0 +1,5 @@
+Use the make command to complile and build the module 
+insert the module(.ko file) using insmod command
+View /proc/devices for the Major number of the driver registered by name RAO's Driver
+create a character device  in /dev with the same Major number using mknod command 
+Write a string into the creating device using ' echo > "string" ', Each character of the written string will displayed in a new line .View it using dmesg command
