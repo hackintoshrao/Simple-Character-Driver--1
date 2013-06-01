@@ -10,6 +10,17 @@
 static dev_t first; // Global variable for the first device number 
 static struct cdev c_dev; // Global variable for the character device structure
 static struct class *cl; // Global variable for the device class
+struct simulate_qset {
+	void **data ; 
+	struct simulate_qset *next ; 
+} 
+struct simulate_dev  { 
+	struct simulate_qset *data ; 
+	int quantum;
+	int qset ; 
+	unsigned long size  ;
+	struct cdev simulate_cdev;
+};
 static int simulate_open(struct inode *i, struct file *f)
 {
   printk(KERN_INFO "Driver: open()\n");
@@ -40,8 +51,21 @@ static int simulate_open(struct inode *i, struct file *f)
   .read = simulate_read,
   .write = simulate_write
 };
- 
-static int __init ofcd_init(void) /* Constructor */
+ static void scull_setup_cdev(struct simulate_dev *dev, dev_t devno) 
+{
+	
+
+	cdev_init(&dev->cdev, &scull_fops);
+	dev->cdev.owner = THIS_MODULE;
+	dev->cdev.ops = &scull_fops;
+	err = cdev_add(&dev->cdev, devno, 1);
+		
+	if(err)
+		printk(KERN_NOTICE "Error %d adding scull%d",err, index);
+}
+
+
+static int __init simulate_init(void) /* Constructor */
 {
   printk(KERN_INFO "\nModule Inserted");
   if (alloc_chrdev_region(&first, 0, 1, "") < 0)
@@ -70,7 +94,7 @@ static int __init ofcd_init(void) /* Constructor */
   return 0;
 }
  
-static void __exit ofcd_exit(void) /* Destructor */
+static void __exit simulate_exit(void) /* Destructor */
 {
   cdev_del(&c_dev);
   device_destroy(cl, first);
@@ -79,7 +103,7 @@ static void __exit ofcd_exit(void) /* Destructor */
   printk(KERN_INFO "\nModule removed");
 }
  
-module_init(ofcd_init);
-module_exit(ofcd_exit);
+module_init(simulate_init);
+module_exit(simulate_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Karthic Rao");
