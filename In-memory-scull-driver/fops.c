@@ -21,6 +21,8 @@ struct simulate_dev  {
 	unsigned long size  ;
 	struct cdev simulate_cdev;
 };
+struct simulate_dev *sim_device;
+
 static int simulate_open(struct inode *i, struct file *f)
 {
   printk(KERN_INFO "Driver: open()\n");
@@ -55,10 +57,10 @@ static int simulate_open(struct inode *i, struct file *f)
 {
 	
 
-	cdev_init(&dev->cdev, &scull_fops);
+	cdev_init(&dev->c, &scull_fops);
 	dev->cdev.owner = THIS_MODULE;
 	dev->cdev.ops = &scull_fops;
-	err = cdev_add(&dev->cdev, devno, 1);
+	err = cdev_add(&dev->simulate_cdev, devno, 1);
 		
 	if(err)
 		printk(KERN_NOTICE "Error %d adding scull%d",err, index);
@@ -83,8 +85,13 @@ static int __init simulate_init(void) /* Constructor */
     unregister_chrdev_region(first, 1);
     return -1;
   }
-    cdev_init(&c_dev, &simulate_fops);
-    if (cdev_add(&c_dev, first, 1) == -1)
+    sim_device = kmalloc(sizeof(struct simulate_dev),GFP_KERNEL);
+    memset(sim_device,0,sizeof(struct simulate_dev));
+	
+    cdev_init(&sim_device->simulate_cdev, &simulate_fops);
+    sim_device->simulate_cdev.owner = THIS_MODULE;
+    sim_device->simulate_cdev.ops = &simulate_fops;
+    if (cdev_add(&sim_device->simulate_cdev, first, 1) == -1)
   {
     device_destroy(cl, first);
     class_destroy(cl);
@@ -96,7 +103,7 @@ static int __init simulate_init(void) /* Constructor */
  
 static void __exit simulate_exit(void) /* Destructor */
 {
-  cdev_del(&c_dev);
+  cdev_del(&sim_device->simulate_cdev);
   device_destroy(cl, first);
   class_destroy(cl);
   unregister_chrdev_region(first, 1);
